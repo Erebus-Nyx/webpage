@@ -1,0 +1,34 @@
+version: "3"
+
+agent:
+  authtoken: 2uElM3Qdq8sOshRow8kG2YlCAGl_uXiYTxHBHmM7cESNTSPs
+  api_key: 2ukuP4LWceFYQ6Wl7HWYV5hEJTR_6F6rLncEgDYC5j2ACJTd1
+  #2ukuSw7r5X20cgxT2utoUrkDQei_6VMA9HU4JptZbqeeqj9sm
+
+  web_allow_hosts:
+    - 127.0.0.0
+    - 127.0.0.1
+    - 172.20.0.1
+    - localhost
+
+endpoints:
+#  - name: ollama 
+#    url: ollama.erebus-nyx.net
+#    upstream:
+#      url: 8080
+#  - name: tavern
+#    url: sillytavern.erebus-nyx.net
+#    upstream:
+#      url: 8000
+  - name: ai
+    url: erebus-nyx.ngrok.dev
+    upstream:
+      url: 8080
+
+# curl \
+# -X POST \
+# -H "Authorization: Bearer {2ukuP4LWceFYQ6Wl7HWYV5hEJTR_6F6rLncEgDYC5j2ACJTd1}" \
+# -H "Content-Type: application/json" \
+# -H "Ngrok-Version: 2" \
+# -d '{"description":"ad-hoc dev testing","metadata":"{\"environment\":\"dev\"}"}' \
+# https://api.ngrok.com/api_keys
