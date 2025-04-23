@@ -1,9 +1,7 @@
 services:
 
   webpage:
-    build: 
-      context: ./webpage
-      dockerfile: Dockerfile
+    build: .
     container_name: webpage
     pull_policy: always
     tty: true
