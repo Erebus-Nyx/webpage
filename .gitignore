@@ -1,1 +1,7 @@
+.env
+ngrok.yml
+ddns-config.json
+nyx.key
+nyx.pem
 *.gguf
+
