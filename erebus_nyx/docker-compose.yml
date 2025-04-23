@@ -1,22 +1,15 @@
 services:
-  healthcheck:
-    test: ["CMD", "/usr/bin/check-health"]
-    interval: 10s
-    timeout: 3s  
-  
 
-  website:
-    build:
+  webpage:
+    build: 
       context: ./webpage
       dockerfile: Dockerfile
-    container_name: website
+    container_name: webpage
     pull_policy: always
     tty: true
     restart: unless-stopped
     volumes:
-      - local-webpage:/app:/rw
-    ports:
-      - 80:80
+      - webpage:/app:/rw
     expose:
       - 80  
 
@@ -37,34 +30,6 @@ services:
       - ./ddns-config.json:/config.json
 
 
-  # swag_proxy:
-  #   image: lscr.io/linuxserver/swag:latest
-  #   container_name: swag_proxy
-  #   restart: unless-stopped
-  #   pull_policy: always
-  #   tty: true
-  #   cap_add:
-  #     - NET_ADMIN
-  #   ports:
-  #     - '80:80'    ## listen
-  #     - '81:81'    ## admin ui
-  #     - '443:443'  ## listen
-  #   volumes:
-  #     - swag:/config
-  #   environment:
-  #     PUID=1000 
-  #     PGID=1000 
-  #     TZ=America/Chicago
-  #     URL=${DOMAIN}
-  #     VALIDATION=dns
-  #     DNSPLUGIN=cloudflare
-  #     EMAIL= ${EMAIL} 
-  #     ONLY_SUBDOMAINS=false 
-  #     EXTRA_DOMAINS= ${SUBDOMAINS}
-  #     STAGING=false 
-  #     DOCKER_MODS=linuxserver/mods:universal-package-install
-       ## SUBDOMAINS=${SUBDOMAINS}  ##www,ftp
-
   nginx_proxy:
     image: docker.io/jc21/nginx-proxy-manager:latest
     container_name: nginx_proxy
@@ -82,7 +47,7 @@ services:
         # Mysql/Maria connection parameters:
         DB_MYSQL_HOST: "mysql-db"
         DB_MYSQL_PORT: 3306
-        DB_MYSQL_USER: "${USER_NAME}"
+        DB_MYSQL_USER: "${USERNAME}"
         DB_MYSQL_PASSWORD: "${PASSWORD}"
         DB_MYSQL_NAME: "${MYSQL_DB}"
         INITIAL_ADMIN_EMAIL: "${EMAIL}"
@@ -90,7 +55,6 @@ services:
         # DISABLE_IPV6: 'true'
     depends_on:
       - mysql-db
-
 
 
   phpmyadmin:
@@ -107,7 +71,7 @@ services:
     environment:
       - PMA_ARBITRARY=0
       - PMA_PORT=8990
-      - PMA_CONTROLUSER=${MYSQL_USER}
+      - PMA_CONTROLUSER=${USERNAME}
       - PMA_CONTROLPASS=${PASSWORD}
     depends_on:
       - mysql-db
@@ -130,15 +94,15 @@ services:
     expose: 
       - 3306
     environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_PW}
+      - MYSQL_ROOT_PASSWORD=${PASSWORD}
       - MYSQL_DATABASE=${MYSQL_DB}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PW}
+      - MYSQL_USER=${USERNAME}
+      - MYSQL_PASSWORD=${PASSWORD}
   
   
-  cf-main:
+  cf-webpage:
     image: cloudflare/cloudflared:latest
-    container_name: cf-main
+    container_name: cf-webpage
     restart: unless-stopped    
     pull_policy: always
     tty: true
@@ -149,10 +113,10 @@ services:
         max-file: "10" 
     command: tunnel run --no-tls-verify    
     environment:
-      TUNNEL_TOKEN: ${CF_ROOT_TOKEN}
+      TUNNEL_TOKEN: ${CF_WEBPAGE_TOKEN}
 
 
-  cloudflared-webui:
+  cf-webui:
     image: cloudflare/cloudflared:latest
     container_name: cf_webui
     restart: unless-stopped    
@@ -202,7 +166,7 @@ services:
         max-file: "10"
     command: tunnel run --no-tls-verify   
     environment:
-      TUNNEL_TOKEN: ${KCPP_TOKEN}
+      TUNNEL_TOKEN: ${CF_KCPP_TOKEN}
     depends_on:
       - koboldcpp
 
@@ -446,8 +410,9 @@ volumes:
   kokoro: {}            #8880
   kokoro-api: {}
   kokoro-models: {}
-  kokoro-voices: {}
-  portainer: {}         #8188 9443
+  kokoro-voices: {} 
+  portainer-sock: {}     #8188 9443
+  portainer-data: {}
   rvc: {}               #7865
   rvc-dataset: {}
   mysql: {}             #8990 (swap with postgres)
@@ -455,16 +420,39 @@ volumes:
   koboldcpp: {}
   nginx_proxy_data: {}
   nginx_proxy_encrypt: {}
-  portainer-data: {}
-  portainer-scok: {}
+  webpage: {}
 
 
+## //// NOT IN USE \\\\ ##
 
 
-
-
-
-
+  # swag_proxy:
+  #   image: lscr.io/linuxserver/swag:latest
+  #   container_name: swag_proxy
+  #   restart: unless-stopped
+  #   pull_policy: always
+  #   tty: true
+  #   cap_add:
+  #     - NET_ADMIN
+  #   ports:
+  #     - '80:80'    ## listen
+  #     - '81:81'    ## admin ui
+  #     - '443:443'  ## listen
+  #   volumes:
+  #     - swag:/config
+  #   environment:
+  #     PUID=1000 
+  #     PGID=1000 
+  #     TZ=America/Chicago
+  #     URL=${DOMAIN}
+  #     VALIDATION=dns
+  #     DNSPLUGIN=cloudflare
+  #     EMAIL= ${EMAIL} 
+  #     ONLY_SUBDOMAINS=false 
+  #     EXTRA_DOMAINS= ${SUBDOMAINS}
+  #     STAGING=false 
+  #     DOCKER_MODS=linuxserver/mods:universal-package-install
+       ## SUBDOMAINS=${SUBDOMAINS}  ##www,ftp
 
 
   # postgres-db:
