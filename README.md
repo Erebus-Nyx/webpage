@@ -11,14 +11,13 @@
     pull_policy: always
     tty: true
     ports:
-      - '80:80'    ## listen
-      - '81:81'    ## admin ui
-      - '443:443'  ## listen
+      - 80:80    ## listen
+      - 81:81    ## admin ui
+      - 443:443  ## listen
     volumes:
       - nginx_proxy_data:/data
       - nginx_proxy_encrypt:/etc/letsencrypt
     environment:
-        # Mysql/Maria connection parameters:
         DB_MYSQL_HOST: "mysql-db"
         DB_MYSQL_PORT: 3306
         DB_MYSQL_USER: "${USERNAME}"
@@ -113,9 +112,7 @@
 
 ```console
   rvc:
-    build:
-      context: ./rvc
-      dockerfile: Dockerfile
+    image: erebusnyx/rvc-webui:latest
     container_name: rvc
     hostname: rvc
     pull_policy: always
@@ -136,12 +133,10 @@
               count: 1
               capabilities: [gpu]
 ```
-https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI.git
-
 
 ```console
   koboldcpp:
-    image: 'koboldai/koboldcpp:latest'  
+    image: koboldai/koboldcpp:latest  
     container_name: koboldcpp
     restart: unless-stopped 
     pull_policy: always   
@@ -149,7 +144,7 @@ https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI.git
     volumes:
       - koboldcpp:/workspace/:rw
     ports:
-      - '7860:7680'
+      - 7860:7680
     environment:
       - KCPP_MODEL=https://huggingface.co/DavidAU/Llama-3.2-8X4B-MOE-V2-Dark-Champion-Instruct-uncensored-abliterated-21B-GGUF/resolve/a09adaf5cafd148ea8084dc095b35e5d07a79ac4/L3.2-8X4B-MOE-V2-Dark-Champion-Inst-21B-uncen-ablit-D_AU-q5_k_m.gguf?download=true # Remove this line if you wish to supply your own model offline
       - KCPP_DONT_REMOVE_MODELS=true
@@ -178,7 +173,7 @@ https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI.git
     pull_policy: always
     tty: true
     ports:
-      - "9998:9998"
+      - 9998:9998
     volumes:
       - tika:/opt/tika:/rw
       - tika-inputs:/opt/tika/inputs:/rw
@@ -250,11 +245,9 @@ https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI.git
 ```
 
 ```console
-  kokoro-tts-cpu: 
-    build: 
-      context: ./Kokoro-FastAPI
-      dockerfile: /docker/cpu/Dockerfile
-    container_name: kokoro-tts-cpu
+  kokoro-cpu: 
+    image: ghcr.io/remsky/kokoro-fastapi-cpu:latest
+    container_name: kokoro-cpu
     restart: unless-stopped
     pull_policy: always
     tty: true    
@@ -264,7 +257,7 @@ https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI.git
       - kokoro-models:/api/src/models/v1_0:/rw
       - kokoro-voices:/api/src/voices/v1_0:/rw
     ports:
-      - "5433:5433"
+      - 5433:5433
     environment:
       - PYTHONPATH=/app:/app/api
       - ONNX_NUM_THREADS=8  
@@ -276,7 +269,6 @@ https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI.git
     depends_on:
       - ollama
 ```
-https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI.git
 
 ```console
   portainer:
@@ -431,25 +423,6 @@ volumes:
  
 ```
 
-```console
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    restart: unless-stopped   
-    pull_policy: always
-    tty: true    
-    volumes:
-      - ollama:/root/.ollama:/rw
-    ports: 
-      - 11434:11434
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [ gpu ]  
-```
 
 ### .ENV
 ```console
