@@ -1,0 +1,15 @@
+[submodule "erebus_nyx/erebus_nyx/Kokoro-FastAPI"]
+	path = erebus_nyx/erebus_nyx/Kokoro-FastAPI
+	url = https://github.com/remsky/Kokoro-FastAPI.git
+[submodule "erebus_nyx/erebus_nyx/RVC"]
+	path = erebus_nyx/erebus_nyx/RVC
+	url = https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI.git
+[submodule "erebus_nyx/erebus_nyx/rvc"]
+	path = erebus_nyx/erebus_nyx/rvc
+	url = https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI.git
+[submodule "erebus_nyx/rvc"]
+	path = erebus_nyx/rvc
+	url = https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI.git
+[submodule "erebus_nyx/kokoro-fastapi"]
+	path = erebus_nyx/kokoro-fastapi
+	url = https://github.com/remsky/Kokoro-FastAPI.git
