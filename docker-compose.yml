@@ -210,7 +210,6 @@ services:
       context: ./rvc
       dockerfile: Dockerfile
     container_name: rvc
-    hostname: rvc
     pull_policy: always
     tty: true
     restart: unless-stopped
@@ -450,7 +449,7 @@ volumes:
   #     EXTRA_DOMAINS= ${SUBDOMAINS}
   #     STAGING=false 
   #     DOCKER_MODS=linuxserver/mods:universal-package-install
-       ## SUBDOMAINS=${SUBDOMAINS}  ##www,ftp
+  #      # SUBDOMAINS=${SUBDOMAINS}  ##www,ftp
 
 
   # postgres-db:
