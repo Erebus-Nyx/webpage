@@ -5,16 +5,9 @@ services:
     container_name: cf-webpage
     restart: unless-stopped    
     tty: true
-    # ports:
-    #   - 80:80
-    #   - 443:443
     ports:
       - 80:80
-      - 81:81
       - 443:443
-      - 15443:15443
-      - 15080:15080
-
     logging:
       driver: json-file
       options:
@@ -28,288 +21,283 @@ services:
       TUNNEL_TOKEN: eyJhIjoiZjE5YzQ4MjM4Yzg0NDQ2OWEwNTBjZDUxOGQxMjY0NDUiLCJ0IjoiN2E2NmMzYWQtMjNmMC00Y2Y5LTgzY2QtNjk5YTJiMGZjNGM1IiwicyI6Ik5Oelc3U2FrMXZpV3dTMExsN1VMZytpOEZBLzE5QzBJaWJjZSs0N0lnQUJvVXFKcU9WYXRJU1JkaGVaWVdjSTMyVnVVLzRneHdlRXZjdm1ZZzNjL3FBPT0ifQ==
     networks:
       - mod-bridge
-    extra_hosts:
-      - host.docker.internal:host-gateway
+
   webpage:                                       
     image: httpd:latest
     container_name: webpage
     pull_policy: always
     restart: unless-stopped
+    tty: true
     volumes:
       - ./data:/usr/local/apache2/htdocs
       - ./conf:/usr/local/apache2/certs:ro
       - ./httpd.conf:/usr/local/apache2/conf/httpd.conf:ro
-    environment:
-      mod_proxy_http2: true
     network_mode: service:cf-webpage
+
     ## generates ssl cert/key for https
     ## openssl req -x509 -newkey rsa:2048 -nodes -sha256 -out ./conf/server.crt -keyout ./conf/server.key -subj "/CN=localhost"
     #  TUNNEL_TOKEN: eyJhIjoiZjE5YzQ4MjM4Yzg0NDQ2OWEwNTBjZDUxOGQxMjY0NDUiLCJ0IjoiNTgwMWExOWYtZmFhNC00YzM2LTg3ZjQtMmU3NTc3MzVjYmE5IiwicyI6Ill6VmpObVl6TkdJdFpEVTRaaTAwWW1VMExUZzBZbVl0WVROaFl6UmxaREEwWlRFMiJ9
 
-  # cf-kcpp:                                       #----:7860
-  #   image: cloudflare/cloudflared:latest
-  #   container_name: cf-kcpp
-  #   restart: unless-stopped 
-  #   tty: true
-  #   ports:
-  #     - 7860:7860
-  #   logging:
-  #     driver: json-file
-  #     options:
-  #       max-size: 100m
-  #       max-file: 10 
-  #   command: tunnel run
-  #   environment:
-  #     NO_TLS_VERIFY: true
-  #     NO_AUTOUPDATE: true
-  #     TUNNEL_ORIGIN_ENABLE_HTTP2: true
-  #     TUNNEL_TOKEN: eyJhIjoiZjE5YzQ4MjM4Yzg0NDQ2OWEwNTBjZDUxOGQxMjY0NDUiLCJ0IjoiZjE1NWU3ODUtZmFlNS00ODlhLWExMDAtNDc4NDlkOTA5NDJlIiwicyI6IlkyWTBNRGRrTlRndFlqSmlaQzAwWW1WbExUZzJPVFV0TkRFMk1HWmpOR1psWVRrMSJ9
-  #   networks:
-  #     - mod-bridge
-  #   extra_hosts:
-  #     - host.docker.internal:host-gateway
-  # koboldcpp:                                     #7860:7860
-  #   image: koboldai/koboldcpp:latest
-  #   container_name: koboldcpp
-  #   restart: unless-stopped 
-  #   volumes:
-  #     - koboldcpp:/workspace/:rw
-  #   tty: true
-  #   environment:
-  #     KCPP_MODEL: https://huggingface.co/DavidAU/Llama-3.2-8X4B-MOE-V2-Dark-Champion-Instruct-uncensored-abliterated-21B-GGUF/resolve/a09adaf5cafd148ea8084dc095b35e5d07a79ac4/L3.2-8X4B-MOE-V2-Dark-Champion-Inst-21B-uncen-ablit-D_AU-q5_k_m.gguf?download=true # Remove this line if you wish to supply your own model offline
-  #     KCPP_DONT_REMOVE_MODELS: true
-  #     KCPP_DONT_UPDATE: false
-  #     KCPP_DONT_TUNNEL: true
-  #     KCPP_ARGS: --model model.gguf --skiplauncher --flashattention --usecublas --gpulayers 99 --multiuser 5 --quiet --websearch --threads 8 --contextsize 8192
-  #     CUDA_DOCKER_ARCH: true
-  #     LLAMA_PORTABLE: true    
-  #   ulimits:
-  #     memlock: -1
-  #   mem_limit: 50gb
-  #   deploy:
-  #     resources:
-  #       reservations:
-  #         devices:
-  #           - driver: nvidia
-  #             count: 1
-  #             capabilities: [ gpu ] 
-  #   network_mode: service:cf-kcpp
-  #   depends_on:
-  #     - ollama
+  cf-kcpp:                                       #5001
+    image: cloudflare/cloudflared:latest
+    container_name: cf-kcpp
+    restart: unless-stopped 
+    tty: true
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+        max-file: 10 
+    command: tunnel run
+    environment:
+      NO_TLS_VERIFY: true
+      NO_AUTOUPDATE: true
+      TUNNEL_ORIGIN_ENABLE_HTTP2: true
+      TUNNEL_TOKEN: eyJhIjoiZjE5YzQ4MjM4Yzg0NDQ2OWEwNTBjZDUxOGQxMjY0NDUiLCJ0IjoiZjE1NWU3ODUtZmFlNS00ODlhLWExMDAtNDc4NDlkOTA5NDJlIiwicyI6IlkyWTBNRGRrTlRndFlqSmlaQzAwWW1WbExUZzJPVFV0TkRFMk1HWmpOR1psWVRrMSJ9
+    networks:
+      - mod-bridge
+  koboldcpp:                                     
+    image: koboldai/koboldcpp:latest
+    container_name: koboldcpp
+    restart: unless-stopped 
+    volumes:
+      - koboldcpp:/workspace/:rw
+    tty: true
+    environment:
+      KCPP_MODEL: https://huggingface.co/DavidAU/Llama-3.2-8X4B-MOE-V2-Dark-Champion-Instruct-uncensored-abliterated-21B-GGUF/resolve/a09adaf5cafd148ea8084dc095b35e5d07a79ac4/L3.2-8X4B-MOE-V2-Dark-Champion-Inst-21B-uncen-ablit-D_AU-q5_k_m.gguf?download=true # Remove this line if you wish to supply your own model offline
+      KCPP_DONT_REMOVE_MODELS: true
+      KCPP_DONT_UPDATE: false
+      KCPP_DONT_TUNNEL: true
+      KCPP_ARGS: --model model.gguf --skiplauncher --flashattention --usecublas --gpulayers 99 --multiuser 5 --quiet --websearch --threads 8 --contextsize 8192
+      CUDA_DOCKER_ARCH: true
+      LLAMA_PORTABLE: true    
+    ulimits:
+      memlock: -1
+    mem_limit: 50gb
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ] 
+    network_mode: service:cf-kcpp
+    depends_on:
+      - ollama
 
 
-  # cf-tavern:                                     #----:8088
-  #   image: cloudflare/cloudflared:latest
-  #   container_name: cf-tavern
-  #   restart: unless-stopped 
-  #   tty: true
-  #   ports:
-  #     - 127.0.0.1:8088:8088
-  #   logging:
-  #     driver: json-file
-  #     options:
-  #       max-size: 100m
-  #       max-file: 10 
-  #   command: tunnel run
-  #   environment:
-  #     NO_TLS_VERIFY: true
-  #     NO_AUTOUPDATE: true
-  #     TUNNEL_ORIGIN_ENABLE_HTTP2: true
-  #     TUNNEL_TOKEN: eyJhIjoiZjE5YzQ4MjM4Yzg0NDQ2OWEwNTBjZDUxOGQxMjY0NDUiLCJ0IjoiYjE3NDU3YzEtZDY3Ny00YzQ0LWE3NWYtMWI1OTljNGY3NmMxIiwicyI6Ik1HVXdaVEE1WW1VdFpqSXhaQzAwWlRBNExUZ3hZakF0Wm1FMVpqaGtZV1V3TWpNeCJ9
-  #   networks:
-  #     - mod-bridge
-  #   extra_hosts:
-  #     - host.docker.internal:host-gateway
-  # sillytavern:                                   #8950:8950
-  #   image: ghcr.io/sillytavern/sillytavern:latest  
-  #   container_name: sillytavern
-  #   restart: unless-stopped
-  #   environment:
-  #      NODE_ENV: production
-  #      FORCE_COLOR: 1
-  #   tty: true
-  #   # secrets:
-  #   #   - client-cert
-  #   #   - client-key
-  #   #   - ca-cert
-  #   volumes:
-  #     - sillytavern-config:/home/node/app/config:/rw
-  #     - sillytavern-data:/home/node/app/data:/rw
-  #     - sillytavern-plugins:/home/node/app/plugins:/rw
-  #     - sillytavern-3rdparty:/home/node/app/public/scripts/extensions/third-party:/rw
-  #   network_mode: service:cf-tavern
-  #   depends_on:
-  #     - ollama
+  cf-tavern:                                     #8000
+    image: cloudflare/cloudflared:latest
+    container_name: cf-tavern
+    restart: unless-stopped 
+    tty: true
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+        max-file: 10 
+    command: tunnel run
+    environment:
+      NO_TLS_VERIFY: true
+      NO_AUTOUPDATE: true
+      TUNNEL_ORIGIN_ENABLE_HTTP2: true
+      TUNNEL_TOKEN: eyJhIjoiZjE5YzQ4MjM4Yzg0NDQ2OWEwNTBjZDUxOGQxMjY0NDUiLCJ0IjoiYjE3NDU3YzEtZDY3Ny00YzQ0LWE3NWYtMWI1OTljNGY3NmMxIiwicyI6Ik1HVXdaVEE1WW1VdFpqSXhaQzAwWlRBNExUZ3hZakF0Wm1FMVpqaGtZV1V3TWpNeCJ9
+    networks:
+      - mod-bridge
+  sillytavern:                                   #8950
+    image: ghcr.io/sillytavern/sillytavern:latest  
+    container_name: sillytavern
+    restart: unless-stopped
+    environment:
+       NODE_ENV: production
+       FORCE_COLOR: 1
+    tty: true
+    volumes:
+      - ./tavern-config.yaml:/home/node/app/config/config.yaml:/rw
+      - sillytavern-data:/home/node/app/data:/rw
+      - sillytavern-plugins:/home/node/app/plugins:/rw
+      - sillytavern-3rdparty:/home/node/app/public/scripts/extensions/third-party:/rw
+      - ./conf:/certs
+    network_mode: service:cf-tavern
+    depends_on:
+      - ollama
 
 
-  # cf-webui:                                      #----:8080
-  #   image: cloudflare/cloudflared:latest
-  #   container_name: cf-webui
-  #   restart: unless-stopped 
-  #   tty: true
-  #   logging:
-  #     driver: json-file
-  #     options:
-  #       max-size: 100m
-  #       max-file: 10 
-  #   command: tunnel run
-  #   environment:
-  #     NO_TLS_VERIFY: true
-  #     NO_AUTOUPDATE: true
-  #     TUNNEL_ORIGIN_ENABLE_HTTP2: true
-  #     TUNNEL_TOKEN: eyJhIjoiZjE5YzQ4MjM4Yzg0NDQ2OWEwNTBjZDUxOGQxMjY0NDUiLCJ0IjoiNTkxOWZkYWEtMDZhZi00NmZiLTgxYTAtYzg4NmNmY2UzNjA1IiwicyI6Ik9EVTRPVGN4TldRdE5UTXdNUzAwTkRCaExUazNZelV0WVRFMFlUSXdZelJpTmpNMiJ9
-  #   # network_mode: host
-  #   networks:
-  #     - mod-bridge
-  #   extra_hosts:
-  #     - host.docker.internal:host-gateway
-  # ollama:                                        #11434:11434
-  #   image: ollama/ollama:latest
-  #   container_name: ollama
-  #   restart: unless-stopped   
-  #   volumes:
-  #     - ollama:/root/.ollama:/rw
-  #   tty: true
-  #   ports: 
-  #     - 11434:11434
-  #   deploy:
-  #     resources:
-  #       reservations:
-  #         devices:
-  #           - driver: nvidia
-  #             count: 1
-  #             capabilities: [ gpu ]  
-  #   networks:
-  #     - mod-bridge
-  #   # extra_hosts:
-  #   #   - host.docker.internal:host-gateway
-  # open-webui:                                    #8080:8080
-  #   image: ghcr.io/open-webui/open-webui:ollama
-  #   container_name: open-webui
-  #   restart: unless-stopped  
-  #   tty: true
-  #   volumes:
-  #     - open-webui:/app/backend/data:/rw
-  #   # secrets:
-  #   #   - client-cert
-  #   #   - client-key
-  #   #   - ca-cert
-  #   ulimits:
-  #     memlock: -1
-  #   mem_limit: 50gb
-  #   environment:
-  #     OLLAMA_BASE_URL: http://ollama:11434
-  #     # WEBUI_SECRET_KEY: ${WEBUI_KEY}
-  #   network_mode: service:cf-webui
-  #   depends_on:
-  #     - ollama
+  cf-webui:                                      #8880
+    image: cloudflare/cloudflared:latest
+    container_name: cf-webui
+    restart: unless-stopped 
+    tty: true
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+        max-file: 10 
+    command: tunnel run
+    environment:
+      NO_TLS_VERIFY: true
+      NO_AUTOUPDATE: true
+      TUNNEL_ORIGIN_ENABLE_HTTP2: true
+      TUNNEL_TOKEN: eyJhIjoiZjE5YzQ4MjM4Yzg0NDQ2OWEwNTBjZDUxOGQxMjY0NDUiLCJ0IjoiNTkxOWZkYWEtMDZhZi00NmZiLTgxYTAtYzg4NmNmY2UzNjA1IiwicyI6Ik9EVTRPVGN4TldRdE5UTXdNUzAwTkRCaExUazNZelV0WVRFMFlUSXdZelJpTmpNMiJ9
+    networks:
+      - mod-bridge
+  ollama:                                        #11434
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped   
+    volumes:
+      - ollama:/root/.ollama:/rw
+    tty: true
+    ports: 
+      - 11434:11434
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]  
+    networks:
+      - mod-bridge
+  open-webui:                                    
+    image: ghcr.io/open-webui/open-webui:ollama
+    container_name: open-webui
+    restart: unless-stopped  
+    tty: true
+    volumes:
+      - open-webui:/app/backend/data:/rw
+    ulimits:
+      memlock: -1
+    mem_limit: 50gb
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      # WEBUI_SECRET_KEY: ${WEBUI_KEY}
+    network_mode: service:cf-webui
+    depends_on:
+      - ollama
+
+  cf-php:                                     #8979
+    image: cloudflare/cloudflared:latest
+    container_name: cf-php
+    restart: unless-stopped 
+    tty: true
+    ports:
+      - 8979:80
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+        max-file: 10 
+    command: tunnel run
+    environment:
+      NO_TLS_VERIFY: true
+      NO_AUTOUPDATE: true
+      TUNNEL_ORIGIN_ENABLE_HTTP2: true
+      TUNNEL_TOKEN: eyJhIjoiZjE5YzQ4MjM4Yzg0NDQ2OWEwNTBjZDUxOGQxMjY0NDUiLCJ0IjoiNTgwMWExOWYtZmFhNC00YzM2LTg3ZjQtMmU3NTc3MzVjYmE5IiwicyI6Ill6VmpObVl6TkdJdFpEVTRaaTAwWW1VMExUZzBZbVl0WVROaFl6UmxaREEwWlRFMiJ9
+    networks:
+      - mod-bridge
+
+  phpmyadmin:                                    #8979
+    image: phpmyadmin
+    container_name: phpmyadmin
+    restart: unless-stopped    
+    volumes:
+      - phpmyadmin:/app:/rw
+    tty: true
+    environment:
+      PMA_ARBITRARY: 0
+      PMA_HOST: mysql-db
+      PMA_PORT: 3306
+      PMA_USER: ${USERNAME}
+      PMA_PASSWORD: ${PASSWORD}      
+      PMA_CONTROLUSER: ${USERNAME}
+      PMA_CONTROLPASS: ${PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${PASSWORD}
+    network_mode: service:cf-php
+    depends_on:
+      - mysql-db
+  mysql-db:                                      #3306
+    image: mysql                                 # or mariadb:10.3 with db_data:/var/lib/mysql
+    container_name: mysql-db
+    restart: unless-stopped    
+    volumes:
+      - mysql:/var/lib/mysql:/rw
+    tty: true
+    ulimits:
+      memlock: -1
+    mem_limit: 50gb
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: ${PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DB}
+      MYSQL_USER: ${USERNAME}
+      MYSQL_PASSWORD: ${PASSWORD}
+    networks:
+      - mod-bridge
 
 
-  # phpmyadmin:                                    #8979:8979
-  #   image: phpmyadmin
-  #   container_name: phpmyadmin
-  #   restart: unless-stopped    
-  #   ports: 
-  #     - 8979:8979
-  #   volumes:
-  #     - phpmyadmin:/app:/rw
-  #   tty: true
-  #   environment:
-  #     PMA_ARBITRARY: 0
-  #     PMA_PORT: 1000
-  #     PMA_CONTROLUSER: ${USERNAME}
-  #     PMA_CONTROLPASS: ${PASSWORD}
-  #   networks:
-  #     - mod-bridge
-  #   extra_hosts:
-  #     - host.docker.internal:host-gateway
-  #   depends_on:
-  #     - mysql-db
-  # mysql-db:                                      #1000:1000
-  #   image: mysql
-  #   container_name: mysql-db
-  #   restart: unless-stopped    
-  #   volumes:
-  #     - mysql:/var/lib/mysql:/rw
-  #   tty: true
-  #   ulimits:
-  #     memlock: -1
-  #   mem_limit: 50gb
-  #   ports:
-  #     - 1000:1000
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: ${PASSWORD}
-  #     MYSQL_DATABASE: ${MYSQL_DB}
-  #     MYSQL_USER: ${USERNAME}
-  #     MYSQL_PASSWORD: ${PASSWORD}
-  #   networks:
-  #     - mod-bridge
-  #   extra_hosts:
-  #     - host.docker.internal:host-gateway
 
-
-  # rvc:                                           #7865:7865
-  #   image: erebusnyx/rvc-webui:latest
-  #   container_name: rvc
-  #   restart: unless-stopped
-  #   volumes:
-  #     - rvc:/app:/rw
-  #     - rvc-dataset:/app/dataset:/rw
-  #   ports:
-  #     - 7865:7865
-  #   tty: true
-  #   depends_on:
-  #     - ollama
-  #   deploy:
-  #     resources:
-  #       reservations:
-  #         devices:
-  #           - driver: nvidia
-  #             count: 1
-  #             capabilities: [gpu]
-  #   networks:
-  #     - mod-bridge
-  #   extra_hosts:
-  #     - host.docker.internal:host-gateway
-  # tika:                                          #9998:9998
-  #   image: apache/tika:latest  
-  #   container_name: tika
-  #   restart: unless-stopped
-  #   ports:
-  #     - 9998:9998
-  #   tty: true
-  #   volumes:
-  #     - tika:/opt/tika:/rw
-  #     - tika-inputs:/opt/tika/inputs:/rw
-  #     - tika-outputs:/opt/tika/outputs:/rw
-  #   networks:
-  #     - mod-bridge
-  #   depends_on:
-  #     - ollama
-  # kokoro-cpu:                                    #5433:5433
-  #   image: ghcr.io/remsky/kokoro-fastapi-cpu:latest
-  #   container_name: kokoro-cpu
-  #   restart: unless-stopped
-  #   tty: true
-  #   volumes:
-  #     - kokoro:/app:/rw
-  #     - kokoro-api:/app/api:/rw
-  #     - kokoro-models:/api/src/models/v1_0:/rw
-  #     - kokoro-voices:/api/src/voices/v1_0:/rw
-  #   ports:
-  #     - 5433:5433
-  #   environment:
-  #     PYTHONPATH: /app:/app/api
-  #     ONNX_NUM_THREADS: 8  
-  #     ONNX_INTER_OP_THREADS: 4  
-  #     ONNX_EXECUTION_MODE: parallel
-  #     ONNX_OPTIMIZATION_LEVEL: all
-  #     ONNX_MEMORY_PATTERN: true
-  #     ONNX_ARENA_EXTEND_STRATEGY: kNextPowerOfTwo'
-  #   networks:
-  #     - mod-bridge
-  #   depends_on:
-  #     - ollama
+  rvc:                                           #7865:7865
+    image: erebusnyx/rvc-webui:latest
+    container_name: rvc
+    restart: unless-stopped
+    volumes:
+      - rvc:/app:/rw
+      - rvc-dataset:/app/dataset:/rw
+    ports:
+      - 7865:7865
+    tty: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - mod-bridge
+    depends_on:
+      - ollama      
+  tika:                                          #9998:9998
+    image: apache/tika:latest  
+    container_name: tika
+    restart: unless-stopped
+    ports:
+      - 9998:9998
+    tty: true
+    volumes:
+      - tika:/opt/tika:/rw
+      - tika-inputs:/opt/tika/inputs:/rw
+      - tika-outputs:/opt/tika/outputs:/rw
+    networks:
+      - mod-bridge
+    depends_on:
+      - ollama
+  kokoro-cpu:                                    #5433:5433
+    image: ghcr.io/remsky/kokoro-fastapi-cpu:latest
+    container_name: kokoro-cpu
+    restart: unless-stopped
+    tty: true
+    volumes:
+      - kokoro:/app:/rw
+      - kokoro-api:/app/api:/rw
+      - kokoro-models:/api/src/models/v1_0:/rw
+      - kokoro-voices:/api/src/voices/v1_0:/rw
+    ports:
+      - 5433:5433
+    environment:
+      PYTHONPATH: /app:/app/api
+      ONNX_NUM_THREADS: 8  
+      ONNX_INTER_OP_THREADS: 4  
+      ONNX_EXECUTION_MODE: parallel
+      ONNX_OPTIMIZATION_LEVEL: all
+      ONNX_MEMORY_PATTERN: true
+      ONNX_ARENA_EXTEND_STRATEGY: kNextPowerOfTwo'
+    networks:
+      - mod-bridge
+    depends_on:
+      - ollama
 
 
   # portainer_ce:                                  #9000

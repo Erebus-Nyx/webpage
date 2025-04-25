@@ -5,3 +5,4 @@ nyx.key
 nyx.pem
 *.gguf
 
+tavern-config.yaml
