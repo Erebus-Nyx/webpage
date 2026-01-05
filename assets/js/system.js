@@ -508,3 +508,369 @@ function sidenavTypeOnResize() {
     });
   }
 }
+
+/**
+ * AppFrameManager - Panel/iframe management for webpage
+ * Based on AI2D Chat's panel architecture
+ */
+const AppFrameManager = {
+    panels: {},
+    activePanel: null,
+    zIndex: 1000,
+    
+    init() {
+        console.log('🚀 Initializing AppFrameManager');
+        this.setupClickHandlers();
+        this.setupContextMenu();
+        this.setupDockIcons();
+    },
+    
+    setupClickHandlers() {
+        // Handle all links with target="iframe" or data-endpoint
+        document.addEventListener('click', (e) => {
+            const link = e.target.closest('a[target="iframe"], a[data-endpoint]');
+            if (link) {
+                e.preventDefault();
+                const url = link.getAttribute('data-endpoint') || link.href;
+                const title = link.textContent.trim();
+                this.openPanel(url, title);
+            }
+        });
+    },
+    
+    openPanel(url, title) {
+        console.log(`📂 Opening panel for: ${title} (${url})`);
+        
+        // Check if panel already exists
+        if (this.panels[url]) {
+            this.bringToFront(url);
+            return;
+        }
+        
+        // Create panel
+        const panel = this.createPanel(url, title);
+        this.panels[url] = panel;
+        
+        // Add to container
+        document.getElementById('app-panels-container').appendChild(panel.element);
+        
+        // Create dock icon
+        this.addDockIcon(url, title);
+        
+        // Bring to front
+        this.bringToFront(url);
+    },
+    
+    createPanel(url, title) {
+        const panelId = `panel-${Object.keys(this.panels).length}`;
+        
+        // Create panel element
+        const panel = document.createElement('div');
+        panel.className = 'app-panel';
+        panel.id = panelId;
+        panel.style.cssText = `
+            position: fixed;
+            top: 100px;
+            left: 100px;
+            width: 80%;
+            height: 70%;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            pointer-events: all;
+            z-index: ${this.zIndex++};
+        `;
+        
+        // Create header
+        const header = document.createElement('div');
+        header.className = 'panel-header';
+        header.style.cssText = `
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 8px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+            user-select: none;
+        `;
+        
+        const titleSpan = document.createElement('span');
+        titleSpan.textContent = title;
+        titleSpan.style.fontWeight = 'bold';
+        
+        const controls = document.createElement('div');
+        controls.style.display = 'flex';
+        controls.style.gap = '8px';
+        
+        // Refresh button
+        const refreshBtn = document.createElement('button');
+        refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+        refreshBtn.className = 'panel-control-btn';
+        refreshBtn.style.cssText = `
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        `;
+        refreshBtn.onmouseover = () => refreshBtn.style.background = 'rgba(255,255,255,0.3)';
+        refreshBtn.onmouseout = () => refreshBtn.style.background = 'rgba(255,255,255,0.2)';
+        refreshBtn.onclick = () => this.refreshPanel(url);
+        
+        // Close button
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+        closeBtn.className = 'panel-control-btn';
+        closeBtn.style.cssText = `
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        `;
+        closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(255,255,255,0.3)';
+        closeBtn.onmouseout = () => closeBtn.style.background = 'rgba(255,255,255,0.2)';
+        closeBtn.onclick = () => this.closePanel(url);
+        
+        controls.appendChild(refreshBtn);
+        controls.appendChild(closeBtn);
+        header.appendChild(titleSpan);
+        header.appendChild(controls);
+        
+        // Create iframe
+        const iframe = document.createElement('iframe');
+        iframe.src = url;
+        iframe.style.cssText = `
+            flex: 1;
+            border: none;
+            border-radius: 0 0 12px 12px;
+            background: white;
+        `;
+        iframe.setAttribute('allow', 'camera; microphone; fullscreen; clipboard-read; clipboard-write');
+        
+        panel.appendChild(header);
+        panel.appendChild(iframe);
+        
+        // Make draggable
+        this.makeDraggable(panel, header);
+        
+        // Make resizable
+        this.makeResizable(panel);
+        
+        // Bring to front on click
+        panel.addEventListener('mousedown', () => this.bringToFront(url));
+        
+        return {
+            element: panel,
+            iframe: iframe,
+            url: url,
+            title: title
+        };
+    },
+    
+    makeDraggable(panel, header) {
+        let isDragging = false;
+        let startX, startY, startLeft, startTop;
+        
+        header.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.panel-control-btn')) return;
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            const rect = panel.getBoundingClientRect();
+            startLeft = rect.left;
+            startTop = rect.top;
+            panel.style.transition = 'none';
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            panel.style.left = (startLeft + dx) + 'px';
+            panel.style.top = (startTop + dy) + 'px';
+        });
+        
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                panel.style.transition = '';
+            }
+        });
+    },
+    
+    makeResizable(panel) {
+        const resizeHandle = document.createElement('div');
+        resizeHandle.style.cssText = `
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 20px;
+            height: 20px;
+            cursor: nwse-resize;
+            background: linear-gradient(135deg, transparent 50%, rgba(0,0,0,0.1) 50%);
+            border-radius: 0 0 12px 0;
+        `;
+        
+        let isResizing = false;
+        let startX, startY, startWidth, startHeight;
+        
+        resizeHandle.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            isResizing = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            const rect = panel.getBoundingClientRect();
+            startWidth = rect.width;
+            startHeight = rect.height;
+            panel.style.transition = 'none';
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            panel.style.width = Math.max(300, startWidth + dx) + 'px';
+            panel.style.height = Math.max(200, startHeight + dy) + 'px';
+        });
+        
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                panel.style.transition = '';
+            }
+        });
+        
+        panel.appendChild(resizeHandle);
+    },
+    
+    bringToFront(url) {
+        if (!this.panels[url]) return;
+        this.panels[url].element.style.zIndex = this.zIndex++;
+        this.activePanel = url;
+    },
+    
+    refreshPanel(url) {
+        if (!this.panels[url]) return;
+        this.panels[url].iframe.src = this.panels[url].url;
+    },
+    
+    closePanel(url) {
+        if (!this.panels[url]) return;
+        this.panels[url].element.remove();
+        delete this.panels[url];
+        this.removeDockIcon(url);
+    },
+    
+    setupDockIcons() {
+        const container = document.getElementById('app-icons-container');
+        if (!container) return;
+        
+        container.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 12px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            display: flex;
+            gap: 12px;
+            z-index: 150;
+        `;
+    },
+    
+    addDockIcon(url, title) {
+        const container = document.getElementById('app-icons-container');
+        if (!container) return;
+        
+        const icon = document.createElement('div');
+        icon.className = 'dock-icon';
+        icon.dataset.url = url;
+        icon.style.cssText = `
+            width: 25px;
+            height: 25px;
+            background: linear-gradient(135deg, #667eea 0%, #1c0433ff 100%);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            position: relative;
+        `;
+        
+        icon.innerHTML = title.charAt(0).toUpperCase();
+        icon.title = title;
+        
+        icon.onmouseover = () => icon.style.transform = 'scale(1.1) translateY(-5px)';
+        icon.onmouseout = () => icon.style.transform = 'scale(1) translateY(0)';
+        icon.onclick = () => this.bringToFront(url);
+        
+        // Right-click context menu
+        icon.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            this.showContextMenu(e, url);
+        });
+        
+        container.appendChild(icon);
+    },
+    
+    removeDockIcon(url) {
+        const container = document.getElementById('app-icons-container');
+        if (!container) return;
+        const icon = container.querySelector(`[data-url="${url}"]`);
+        if (icon) icon.remove();
+    },
+    
+    setupContextMenu() {
+        const menu = document.getElementById('app-context-menu');
+        if (!menu) return;
+        
+        // Hide on click outside
+        document.addEventListener('click', () => {
+            menu.style.display = 'none';
+        });
+        
+        // Handle menu items
+        menu.querySelectorAll('.context-menu-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const action = item.dataset.action;
+                const url = menu.dataset.currentUrl;
+                
+                if (action === 'refresh') {
+                    this.refreshPanel(url);
+                } else if (action === 'close') {
+                    this.closePanel(url);
+                }
+                
+                menu.style.display = 'none';
+            });
+        });
+    },
+    
+    showContextMenu(e, url) {
+        const menu = document.getElementById('app-context-menu');
+        if (!menu) return;
+        
+        menu.dataset.currentUrl = url;
+        menu.style.display = 'block';
+        menu.style.left = e.pageX + 'px';
+        menu.style.top = e.pageY + 'px';
+    }
+};
+
+console.log('✅ AppFrameManager loaded');
