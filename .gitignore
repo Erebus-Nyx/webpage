@@ -1,8 +1,6 @@
 .env
-ngrok.yml
 ddns-config.json
 *.key
 *.pem
 *.crt
 *.gguf
-tavern-config.yaml
