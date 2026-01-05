@@ -4,3 +4,5 @@ ddns-config.json
 *.pem
 *.crt
 *.gguf
+keys.json
+kuma.db
